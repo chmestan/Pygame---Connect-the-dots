@@ -17,7 +17,6 @@ border = 20
 play_zone = ((345, 685),(130,570))
 
 def DotPlacements(spacing):
-    spacing = spacing
 
     width0_placement = int(play_zone[0][0]/spacing) + 2
     height0_placement = int(play_zone[1][0]/spacing) + 2
@@ -29,11 +28,10 @@ def DotPlacements(spacing):
         for y in range (height0_placement, height1_placement):
             if (x%2 == y%2):
                 pos_list.append((x*spacing,y*spacing))
-
     return pos_list
-dot_placements = DotPlacements(30)
+    
 
-# INITIALISATIONS - pas toucher
+# INITIALISATIONS - pas touche
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Connect the dots")
 clock = pygame.time.Clock()
@@ -49,13 +47,19 @@ player_pos_y = (play_zone[1][1]-play_zone[1][0])/2
 # initialisation du nombre de dots 
 STARTINGNBOFDOTS = 3
 numberOfDots = STARTINGNBOFDOTS
+dot_placements = DotPlacements(numberOfDots*2)
 
 # Tutorial state
 playing = False
 tutorial = True
-tutorial_bg = pygame.Surface((1000,700)) # capital S, arguments: a tuple with width and height
-tutorial_bg.fill('black')
-tuto_screen_rect = tutorial_bg.get_rect()
+tutorial_image = pygame.image.load('graphics/tuto.png') # capital S, arguments: a tuple with width and height
+tuto_screen_rect = tutorial_image.get_rect()
+
+beep_sound = pygame.mixer.Sound('audio/boop.wav')
+win_sound = pygame.mixer.Sound('audio/win.wav')
+lose_sound = pygame.mixer.Sound('audio/lose.mp3')
+whoosh_sound = pygame.mixer.Sound('audio/whoosh.mp3')
+
 
 class Dot(pygame.sprite.Sprite):
 
@@ -159,6 +163,7 @@ def CollisionIndex():
         if sprites_collision:
             dot_index = sprites_collision[0].index
             if dot_index not in dots_reached:
+                beep_sound.play()
                 sprites_collision[0].collision_flag = True
                 dots_reached.append(dot_index)
         return dots_reached
@@ -169,6 +174,7 @@ def LevelOneCheck():
         if i not in completion_checklist:
             completion_checklist.append(i)
     if dots_reached == completion_checklist:
+        win_sound.play()
         return True
     return False
 
@@ -202,7 +208,7 @@ def Tutorial():
         else:
             tuto_screen_rect.top += 30
             tuto_screen_moving = True
-    screen.blit(tutorial_bg, tuto_screen_rect)
+    screen.blit(tutorial_image, tuto_screen_rect)
     return tuto_screen_moving
 
 ####################################################################################
@@ -214,6 +220,7 @@ while True:
     if (tutorial):
         keys = pygame.key.get_pressed()
         if True in keys:
+            whoosh_sound.play()
             tutorial = False
 
     screen.blit(bgImage,(0,0))
@@ -231,6 +238,7 @@ while True:
 
     for i in range(len(dots_reached)):
         if dots_reached[i] != i: #ECHEC
+            lose_sound.play()
             numberOfDots = STARTINGNBOFDOTS
             time.sleep(0.3)
             Clear()
@@ -249,6 +257,7 @@ while True:
         time.sleep(0.1)
         Clear()
         numberOfDots +=1
+        dot_placements = DotPlacements(numberOfDots*2)
         SetUp(numberOfDots)
 
     playing = not Tutorial()
