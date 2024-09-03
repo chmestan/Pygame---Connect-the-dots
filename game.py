@@ -50,6 +50,13 @@ player_pos_y = (play_zone[1][1]-play_zone[1][0])/2
 STARTINGNBOFDOTS = 3
 numberOfDots = STARTINGNBOFDOTS
 
+# Tutorial state
+playing = False
+tutorial = True
+tutorial_bg = pygame.Surface((1000,700)) # capital S, arguments: a tuple with width and height
+tutorial_bg.fill('black')
+tuto_screen_rect = tutorial_bg.get_rect()
+
 class Dot(pygame.sprite.Sprite):
 
     def __init__(self, index):
@@ -66,7 +73,6 @@ class Dot(pygame.sprite.Sprite):
         self.pos_index = (self.coord[0], 800)
 
     def IndexDisplay(self):
-
         if (self.collision_flag == True and self.timer < 6):
             self.dot_index = pygame.transform.rotozoom(self.dot_index, 0, 1.001)
         elif (self.collision_flag == True and self.timer < 6):
@@ -86,8 +92,8 @@ class Dot(pygame.sprite.Sprite):
             self.timer = 0
 
     def DotDisplay(self):
-        self.pos = (self.coord[0], self.pos[1]+(self.coord[1]- self.pos[1])*.15) #tweening
-        screen.blit(self.image, self.pos)
+            self.pos = (self.coord[0], self.pos[1]+(self.coord[1]- self.pos[1])*.15) #tweening
+            screen.blit(self.image, self.pos)
 
     def update(self):
         self.DotDisplay()
@@ -110,27 +116,28 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         move_x, move_y = 0, 0
         
-        if keys[pygame.K_UP] and self.rect.top > play_zone[1][0]:
-            move_y = -self.speed
-        if keys[pygame.K_DOWN] and self.rect.bottom < play_zone[1][1]:
-            move_y = self.speed
-        if keys[pygame.K_LEFT] and self.rect.left > play_zone[0][0]:
-            move_x = -self.speed
-        if keys[pygame.K_RIGHT] and self.rect.left < play_zone[0][1]:
-            move_x = self.speed
+        if playing:
+            if (keys[pygame.K_UP] or keys[pygame.K_w] or keys[pygame.K_z]) and self.rect.top > play_zone[1][0]:
+                move_y = -self.speed
+            if (keys[pygame.K_DOWN] or keys[pygame.K_s]) and self.rect.bottom < play_zone[1][1]:
+                move_y = self.speed
+            if (keys[pygame.K_LEFT] or keys[pygame.K_a] or keys[pygame.K_q]) and self.rect.left > play_zone[0][0]:
+                move_x = -self.speed
+            if (keys[pygame.K_RIGHT] or keys[pygame.K_d]) and self.rect.left < play_zone[0][1]:
+                move_x = self.speed
 
-        # Adjust diagonal movement speed by a smaller factor
-        if move_x != 0 and move_y != 0:
-            diagonal_factor = 0.75  # Adjust this factor as needed
-            move_x *= diagonal_factor
-            move_y *= diagonal_factor
+            # Adjust diagonal movement speed by a smaller factor
+            if move_x != 0 and move_y != 0:
+                diagonal_factor = 0.75  # Adjust this factor as needed
+                move_x *= diagonal_factor
+                move_y *= diagonal_factor
 
-        # Update the position using floats for precision
-        self.position.x += move_x
-        self.position.y += move_y
+            # Update the position using floats for precision
+            self.position.x += move_x
+            self.position.y += move_y
 
-        # Update the rect position from the float position
-        self.rect.center = (int(self.position.x), int(self.position.y))
+            # Update the rect position from the float position
+            self.rect.center = (int(self.position.x), int(self.position.y))
 
     def update(self):
         self.playerMovement()
@@ -139,7 +146,7 @@ class Line(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
         self.image = pygame.image.load('graphics/line.png').convert_alpha()
-        self.rect = self.image.get_rect(center = (player.sprite.rect.x, player.sprite.rect.y))
+        self.rect = self.image.get_rect(center = (player.sprite.rect.x + randint(1,2), player.sprite.rect.y  + randint(1,2)))
 
     def LineDisplay(self):
         screen.blit(self.image, self.rect)
@@ -186,15 +193,29 @@ def Clear():
     dotGroup.empty()
     dots_reached.clear()
 
-
+def Tutorial():
+    tuto_screen_moving = False
+    if not tutorial:
+        if tuto_screen_rect.top >= 750:
+            tuto_screen_rect.top = 750
+            return tuto_screen_moving
+        else:
+            tuto_screen_rect.top += 30
+            tuto_screen_moving = True
+    screen.blit(tutorial_bg, tuto_screen_rect)
+    return tuto_screen_moving
 
 ####################################################################################
-
-#écran tuto
 
 SetUp(numberOfDots)
 
 while True:
+
+    if (tutorial):
+        keys = pygame.key.get_pressed()
+        if True in keys:
+            tutorial = False
+
     screen.blit(bgImage,(0,0))
     # screen.blit(player.image, player.rect)
 
@@ -225,10 +246,12 @@ while True:
         player.update()
 
     else: 
-        time.sleep(0.3)
+        time.sleep(0.1)
         Clear()
         numberOfDots +=1
         SetUp(numberOfDots)
+
+    playing = not Tutorial()
 
     pygame.display.update()
     clock.tick(60)
